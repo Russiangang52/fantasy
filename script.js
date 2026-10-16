@@ -136,107 +136,79 @@ const PRICES = {
 
 const fmt = n => n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ₽';
 
-/* --- Прайс --- */
-const tabsEl = document.getElementById('tabs');
-const listEl = document.getElementById('priceList');
-const selectEl = document.getElementById('fService');
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
 
-function renderTabs(active) {
-  tabsEl.innerHTML = Object.entries(PRICES).map(([k, v]) =>
-    `<button class="tab${k === active ? ' active' : ''}" role="tab" data-cat="${k}">${v.label}</button>`
-  ).join('');
+/* --- Прайс (страница «Услуги») --- */
+const tabsEl = $('tabs');
+const listEl = $('priceList');
+if (tabsEl && listEl) {
+  const renderTabs = active => {
+    tabsEl.innerHTML = Object.entries(PRICES).map(([k, v]) =>
+      `<button class="tab${k === active ? ' active' : ''}" role="tab" data-cat="${k}">${v.label}</button>`).join('');
+  };
+  const renderList = cat => {
+    listEl.innerHTML = PRICES[cat].groups.map(g =>
+      `<h3 class="price-group">${g.title}</h3>` +
+      g.items.map(([name, price, note]) =>
+        `<a class="price" href="booking.html?service=${encodeURIComponent(name)}">
+           <div class="price__name">${name}${note ? `<small>${note}</small>` : ''}</div>
+           <span class="price__dots"></span>
+           <span class="price__val">${fmt(price)}</span>
+         </a>`).join('')).join('');
+  };
+  const setCategory = cat => { renderTabs(cat); renderList(cat); };
+  tabsEl.addEventListener('click', e => {
+    const b = e.target.closest('.tab');
+    if (b) { setCategory(b.dataset.cat); history.replaceState(null, '', '?cat=' + b.dataset.cat); }
+  });
+  const c = params.get('cat');
+  setCategory(PRICES[c] ? c : 'hair');
 }
 
-function renderList(cat) {
-  const data = PRICES[cat];
-  listEl.innerHTML = data.groups.map(g =>
-    `<h3 class="price-group">${g.title}</h3>` +
-    g.items.map(([name, price, note]) =>
-      `<div class="price" data-service="${name.replace(/"/g, '&quot;')}">
-         <div class="price__name">${name}${note ? `<small>${note}</small>` : ''}</div>
-         <span class="price__dots"></span>
-         <span class="price__val">${fmt(price)}</span>
-       </div>`).join('')
-  ).join('');
-}
+/* --- Форма записи (страница «Запись») --- */
+const selectEl = $('fService');
+if (selectEl) {
+  selectEl.innerHTML = '<option value="">Не определился(-ась) — подскажите</option>' +
+    Object.values(PRICES).map(c =>
+      `<optgroup label="${c.label}">` +
+      c.groups.flatMap(g => g.items).map(([n, p]) => `<option value="${n} — ${fmt(p)}">${n} — ${fmt(p)}</option>`).join('') +
+      '</optgroup>').join('');
 
-function setCategory(cat) {
-  renderTabs(cat);
-  renderList(cat);
-}
-
-/* select в форме */
-selectEl.innerHTML = '<option value="">Не определился(-ась) — подскажите</option>' +
-  Object.values(PRICES).map(c =>
-    `<optgroup label="${c.label}">` +
-    c.groups.flatMap(g => g.items).map(([n, p]) => `<option>${n} — ${fmt(p)}</option>`).join('') +
-    '</optgroup>'
-  ).join('');
-
-function chooseService(name) {
-  const found = [...selectEl.options].find(o => o.value.startsWith(name) || o.text.startsWith(name));
-  if (found) selectEl.value = found.value || found.text;
-  else {
-    const o = new Option(name, name);
-    selectEl.add(o, 1);
-    selectEl.value = name;
+  const wanted = params.get('service');
+  if (wanted) {
+    const found = [...selectEl.options].find(o => o.value.startsWith(wanted));
+    if (found) selectEl.value = found.value;
+    else { selectEl.add(new Option(wanted, wanted), 1); selectEl.value = wanted; }
   }
+
+  const err = $('formErr');
+  document.querySelectorAll('[data-send]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const name = $('fName').value.trim();
+      if (!name) { err.hidden = false; $('fName').focus(); return; }
+      err.hidden = true;
+      const service = selectEl.value || 'Нужна консультация';
+      const when = $('fWhen').value.trim();
+      const text = `Здравствуйте! Меня зовут ${name}. Хочу записаться в Fantasy.\nУслуга: ${service}` +
+        (when ? `\nЖелаемое время: ${when}` : '');
+      const url = btn.dataset.send === 'tg'
+        ? `https://t.me/${TG}?text=${encodeURIComponent(text)}`
+        : `https://wa.me/${WA}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank', 'noopener');
+    }));
 }
-
-tabsEl.addEventListener('click', e => {
-  const b = e.target.closest('.tab');
-  if (b) setCategory(b.dataset.cat);
-});
-
-listEl.addEventListener('click', e => {
-  const row = e.target.closest('.price');
-  if (!row) return;
-  chooseService(row.dataset.service);
-  document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
-});
-
-document.querySelectorAll('.card a[data-cat]').forEach(a =>
-  a.addEventListener('click', () => setCategory(a.dataset.cat)));
-
-document.querySelectorAll('[data-service]:not(.price)').forEach(a =>
-  a.addEventListener('click', () => chooseService(a.dataset.service)));
-
-setCategory('hair');
-
-/* --- Форма --- */
-const err = document.getElementById('formErr');
-document.querySelectorAll('[data-send]').forEach(btn =>
-  btn.addEventListener('click', () => {
-    const name = document.getElementById('fName').value.trim();
-    if (!name) {
-      err.hidden = false;
-      document.getElementById('fName').focus();
-      return;
-    }
-    err.hidden = true;
-    const service = selectEl.value || 'Нужна консультация';
-    const when = document.getElementById('fWhen').value.trim();
-    const text = `Здравствуйте! Меня зовут ${name}. Хочу записаться в Fantasy.\nУслуга: ${service}` +
-      (when ? `\nЖелаемое время: ${when}` : '');
-    const url = btn.dataset.send === 'tg'
-      ? `https://t.me/${TG}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/${WA}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank', 'noopener');
-  }));
 
 /* --- Хедер, меню --- */
-const header = document.getElementById('header');
-const nav = document.getElementById('nav');
-const burger = document.getElementById('burger');
+const header = $('header');
+const nav = $('nav');
+const burger = $('burger');
 const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 40);
 onScroll();
 window.addEventListener('scroll', onScroll, { passive: true });
 burger.addEventListener('click', () => {
   burger.classList.toggle('open');
   nav.classList.toggle('open');
-});
-nav.addEventListener('click', e => {
-  if (e.target.closest('a')) { burger.classList.remove('open'); nav.classList.remove('open'); }
 });
 
 /* --- Появление при скролле --- */
@@ -247,4 +219,4 @@ const io = 'IntersectionObserver' in window
   : null;
 document.querySelectorAll('.reveal').forEach(el => io ? io.observe(el) : el.classList.add('in'));
 
-document.getElementById('year').textContent = new Date().getFullYear();
+$('year').textContent = new Date().getFullYear();

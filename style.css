@@ -190,3 +190,32 @@ dd a:hover{color:var(--gold)}
   .reveal{opacity:1;transform:none}
   html{scroll-behavior:auto}
 }
+
+/* ---- Многостраничная версия ---- */
+.nav a.active:not(.btn){color:var(--gold);opacity:1}
+.page-hero{padding:170px 0 70px;background:radial-gradient(circle at 80% 0%,#2e211b,transparent 60%),var(--bg);border-bottom:1px solid var(--line)}
+.page-hero h1{font-size:clamp(40px,6vw,76px);max-width:14em}
+.page-hero .hero__text{margin-bottom:0}
+.price{color:inherit}
+.cards--3{grid-template-columns:repeat(3,1fr)}
+.card h3{line-height:1.1}
+.book-options{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.book-card{border:1px solid var(--line);background:var(--bg-2);padding:46px 40px;display:flex;flex-direction:column;gap:18px;align-items:flex-start;border-radius:var(--r)}
+.book-card--main{border-color:var(--gold);background:linear-gradient(135deg,#2a1f1a,var(--bg-2))}
+.book-card .card__n{font:400 12px var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+.book-card h3{font-size:38px}
+.book-card p{color:var(--muted);flex:1}
+.form__alt{font-size:13px;color:var(--gold);letter-spacing:.04em;text-align:center}
+.cta{text-align:center}
+.cta__inner{display:flex;flex-direction:column;align-items:center;gap:20px}
+.cta .hero__actions{justify-content:center}
+.footer__grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px}
+.footer__links{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.footer__links a:hover,.footer a:hover{color:var(--gold)}
+.footer__copy{grid-column:1/-1;font-size:12.5px;border-top:1px solid var(--line);padding-top:24px}
+@media (max-width:980px){
+  .cards--3,.book-options{grid-template-columns:1fr}
+  .footer__grid{grid-template-columns:1fr 1fr}
+  .page-hero{padding:130px 0 50px}
+}
+@media (max-width:620px){.footer__grid{grid-template-columns:1fr}.book-card{padding:32px 24px}}
